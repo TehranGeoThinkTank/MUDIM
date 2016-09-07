@@ -1,0 +1,25 @@
+Allfieldsneeded = ['Layer_name', 'v', 'v1', 'v2', 'v3']
+... rows = arcpy.SearchCursor(r'E:\Sharan\PRJ.RPT\94ER-WCS.1\FIG\GIS\MUDIM\Database\GDB_shahri_UTM39.mdb\name_variable_reference',Allfieldsneeded)
+... layernamelist= [row.getValue('Layer_name') for row in rows]
+... rows = arcpy.SearchCursor(r'E:\Sharan\PRJ.RPT\94ER-WCS.1\FIG\GIS\MUDIM\Database\GDB_shahri_UTM39.mdb\name_variable_reference',Allfieldsneeded)
+... layercodelist= [row.getValue('Layer_code') for row in rows]
+... diclayervar = zip(layernamelist, layercodelist)
+... dictlayervars = dict(diclayervar)
+... rows = arcpy.SearchCursor(r'E:\Sharan\PRJ.RPT\94ER-WCS.1\FIG\GIS\MUDIM\Database\GDB_shahri_UTM39.mdb\name_variable_reference',Allfieldsneeded)
+... layerfieldslist = {row.getValue('Layer_name'):[row.getValue('v'),row.getValue('v1'),row.getValue('v2'),row.getValue('v3')] for row in rows}
+... import os
+... workspace = "E:/Sharan/PRJ.RPT/94ER-WCS.1/FIG/GIS/MUDIM/Database/GDB_shahri_UTM39.mdb"
+... feature_classes = []
+... walk = arcpy.da.Walk(workspace, datatype="FeatureClass")
+... for dirpath, dirnames, filenames in walk:
+...     for filename in filenames:
+...         feature_classes.append(os.path.join(dirpath, filename))
+...         layercode = dictlayervars[filename]
+...         layerfields = layerfieldslist[filename]
+...         print layercode 
+...         print filename
+...         arcpy.FeatureClassToFeatureClass_conversion(in_features=os.path.join(dirpath, filename),out_path="E:/Sharan/PRJ.RPT/94ER-WCS.1/FIG/GIS/MUDIM/Database/GDB_shahri_UTM41.mdb/Coded",out_name=layercode)
+...         print "success"
+...         for layerfields in layerfields:
+...             input = "E://Sharan//PRJ.RPT//94ER-WCS.1//FIG//GIS//MUDIM//Database//GDB_shahri_UTM41.mdb//Coded//"+layercode
+...             arcpy.AddField_management(input,layerfields,"LONG")
