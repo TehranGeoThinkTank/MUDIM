@@ -1,0 +1,51 @@
+import arcpy
+#Layer_name and layer_code will be accessed from name_code_reference table and kind will be access from the actual shapefile. Fields for split works as a container that we use it when we want to use cursor function
+#Cursor iterates through the reference table and creates a dictionary, dicforsplit, that includes pairs of Layer_name and Layer_code. 
+Fieldsforsplit = ['Layer_name','Layer_code','Kind']
+rows = arcpy.SearchCursor(r'E:\Sharan\PRJ.RPT\94ER-WCS.1\FIG\GIS\MUDIM\Database\GDB_shahri_UTM39.mdb\name_reference1',Fieldsforsplit)
+dicforsplit = {row.getValue('Layer_name'):row.getValue('Layer_code') for row in rows}
+
+# Using walk function the machine iterates through all the feature classes in the first geodatabase and find names and path. 
+# The code iterates through all the files. Once the code access each file it iterates through its attribute table and make a list from its "Kind" field. 
+#for each item in kind list the code use "filename"(gotten form walk function) and item (kind) and creates a new variable called fileandkind. 
+#The code get the associated Layer_code by using fileandkind (which is basically layer_name in the reference table). Then code uses Layer_code as a new name for the output. 
+#the output will be saved in a new geodatabase
+import os 
+workspace = "E:/Sharan/PRJ.RPT/94ER-WCS.1/FIG/GIS/MUDIM/Database/GDB_shahri_UTM39.mdb"
+feature_classes = []
+walk = arcpy.da.Walk(workspace, datatype="FeatureClass")
+for dirpath, dirnames, filenames in walk:
+	for filename in filenames:
+		feature_classes.append(os.path.join(dirpath, filename))
+		input = os.path.join(dirpath, filename)
+		rows = arcpy.SearchCursor(input,Fieldsforsplit)
+		kinds=[]
+		for row in rows:
+			if row.getValue('Kind') not in kinds:
+				kinds.append(row.getValue('Kind'))
+		for item in kinds:
+			fileandkind = filename+"_"+item
+			outputname = dicforsplit[fileandkind]
+			rule = rule = "[Kind]="+repr(str(item)) 
+			arcpy.FeatureClassToFeatureClass_conversion(in_features=os.path.join(dirpath, filename),out_path="E:/Sharan/PRJ.RPT/94ER-WCS.1/FIG/GIS/MUDIM/Database/GDB_shahri_UTM41.mdb/Coded",out_name=outputname,where_clause=rule)
+		
+		
+#Layer_name and layer_code will be accessed from code_var_reference table. Fieldsforaddfield works as a container that we use it when we want to use cursor function
+#Cursor iterates through the reference table and creates a dictionary, dicforaddfield, that includes pairs of Layer_name and Layer_code. 
+Fieldsforaddfield = ['Layer_code', 'v', 'v1', 'v2', 'v3']
+rows = arcpy.SearchCursor(r'E:\Sharan\PRJ.RPT\94ER-WCS.1\FIG\GIS\MUDIM\Database\GDB_shahri_UTM39.mdb\var_reference1',Fieldsforaddfield)
+dicforaddfield = {row.getValue('Layer_code'):[row.getValue('v'),row.getValue('v1'),row.getValue('v2'),row.getValue('v3')] for row in rows}		
+
+# Using walk function the machine iterates through all the feature classes in second geodatabase and find names and path. 
+# The code iterates through all the files. Once the code access each file it find the associated record to the file in reference table and find all the fields that should be added to the attribute table of the feature class.
+workspace = "E:/Sharan/PRJ.RPT/94ER-WCS.1/FIG/GIS/MUDIM/Database/GDB_shahri_UTM41.mdb"
+feature_classes = []	
+walk = arcpy.da.Walk(workspace, datatype="FeatureClass")
+for dirpath, dirnames, filenames in walk:
+	for filename in filenames:	
+		feature_classes.append(os.path.join(dirpath, filename))
+		layerfields = dicforaddfield[filename]
+		for layerfields in layerfields:
+			inputaddress= "E://Sharan//PRJ.RPT//94ER-WCS.1//FIG//GIS//MUDIM//Database//GDB_shahri_UTM41.mdb//Coded//"+filename
+			arcpy.AddField_management(inputaddress,layerfields,"LONG")
+				
